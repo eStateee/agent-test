@@ -151,5 +151,3 @@ browser-agent/
 ```
 
 ## Видео-тест
-
-https://youtu.be/XbF_37pM1zw
