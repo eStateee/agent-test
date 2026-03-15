@@ -1,0 +1,55 @@
+<!-- File: viewer.html -->
+<!-- language: html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Actions viewer</title>
+  <style>
+    body { font-family: monospace; background:#111; color:#eee; padding:10px }
+    .evt { padding:6px; border-bottom:1px solid #222 }
+    .ts { color:#6cf; font-size:0.9em; margin-right:8px }
+    .type { color:#9f9; margin-right:8px }
+    pre { white-space:pre-wrap; margin:0 }
+  </style>
+</head>
+<body>
+  <h3>Live actions viewer</h3>
+  <div id="list"></div>
+  <script>
+    const logUrl = '/logs/actions.ndjson'; // если открываете файл локально через file://, измените fetch на загрузку по file:// не сработает — запустите простой HTTP сервер
+    let lastSize = 0;
+    async function fetchAndRender() {
+      try {
+        const res = await fetch(logUrl + '?_=' + Date.now());
+        if (!res.ok) return;
+        const txt = await res.text();
+        const lines = txt.trim().split('\n').filter(Boolean);
+        const container = document.getElementById('list');
+        container.innerHTML = '';
+        for (const line of lines.slice(-500)) {
+          try {
+            const e = JSON.parse(line);
+            const d = new Date((e.ts || Date.now()) * 1000);
+            const ts = new Date((e.ts || Date.now()) * 1000);
+            const tsStr = e.ts ? new Date(e.ts*1000).toISOString() : '';
+            const el = document.createElement('div');
+            el.className = 'evt';
+            el.innerHTML = '<span class="ts">' + (tsStr || '') + '</span>'
+                         + '<span class="type">[' + (e.type || '') + ']</span>'
+                         + '<pre>' + (JSON.stringify(e, null, 2)) + '</pre>';
+            container.appendChild(el);
+          } catch (err) { /* ignore parse errors */ }
+        }
+        window.scrollTo(0, document.body.scrollHeight);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setTimeout(fetchAndRender, 500);
+      }
+    }
+    fetchAndRender();
+  </script>
+  <p>Запуск: откройте `viewer.html` в браузере через локальный HTTP (например `python -m http.server 8000`) и запускйте тесты. Также запустите Playwright headful (`set PWDEBUG=1 && pytest ...`) чтобы видеть браузер.</p>
+</body>
+</html>
